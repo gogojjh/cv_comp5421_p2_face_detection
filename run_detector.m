@@ -47,6 +47,8 @@ bboxes = zeros(0,4);
 confidences = zeros(0,1);
 image_ids = cell(0,1);
 
+method_mod = 0;
+
 for i = 1:num_test_scenes
       
     fprintf('Detecting faces in %s\n', test_scenes(i).name)
@@ -56,46 +58,62 @@ for i = 1:num_test_scenes
         img = rgb2gray(img);
     end
 
-    % You can delete all of this below.
-    % Let's create 15 random detections per image
-%     cur_x_min = rand(15,1) * size(img,2);
-%     cur_y_min = rand(15,1) * size(img,1);
-%     cur_bboxes = [cur_x_min, cur_y_min, cur_x_min + rand(15,1) * 50, cur_y_min + rand(15,1) * 50];
-%     cur_confidences = rand(15,1) * 4 - 2; %confidences in the range [-2 2]
-%     cur_image_ids(1:15,1) = {test_scenes(i).name};      
-
     cur_bboxes = zeros(0, 4);
     cur_confidences = zeros(0, 0);
     classification_class = [];
     
-    scale = floor(feature_params.template_size*1.5.^(0:1:log(min(size(img,1), size(img,2))/feature_params.template_size)/log(1.5)));    
-    for j = 1:length(scale)
-        s = scale(j);
-        disp('Current scale');
-        disp(s);
-        for y = 1:floor(size(img,1)/s)
-            for x = 1:floor(size(img,2)/s)
-                img_crop = img((y-1)*s+1:y*s, (x-1)*s+1:x*s, :);
-                img_resize = imresize(img_crop, [feature_params.template_size, feature_params.template_size]);   
-                hog = vl_hog(single(img_resize), feature_params.hog_cell_size, 'variant', feature_params.variant);
-                hog_compress = hog(:)';
-                confidence = hog_compress*w + b;
-                if (sign(confidence) == 1)
-                    cur_bboxes = [cur_bboxes; [(x-1)*s+1, (y-1)*s+1, x*s, y*s]];
-                    cur_confidences = [cur_confidences; confidence];
+    if method_mod == 0
+        disp('[INFO] detect with method_mod 0');
+        scale = floor(feature_params.template_size*1.5.^(0:1:log(min(size(img,1), size(img,2))/feature_params.template_size)/log(1.5)));    
+        for j = 1:length(scale)
+            s = scale(j);
+            disp(strcat('Current scale: ', int2str(s)));
+            for y = 1:floor(size(img,1)/s)
+                for x = 1:floor(size(img,2)/s)
+                    img_crop = img((y-1)*s+1:y*s, (x-1)*s+1:x*s, :);
+                    img_resize = imresize(img_crop, [feature_params.template_size, feature_params.template_size]);   
+                    hog = vl_hog(single(img_resize), feature_params.hog_cell_size, 'variant', feature_params.variant);
+                    hog_compress = hog(:)';
+                    confidence = hog_compress*w + b;
+                    if (sign(confidence) == 1)
+                        cur_bboxes = [cur_bboxes; [(x-1)*s+1, (y-1)*s+1, x*s, y*s]];
+                        cur_confidences = [cur_confidences; confidence];
+                    end
+                    classification_class = [classification_class, sign(confidence)];
                 end
-                classification_class = [classification_class, sign(confidence)];
             end
         end
+    elseif method_mod == 1
+        disp('[INFO] detect with method_mod 0');
+        scale = 1.0;
+        zoom = 0.8;
+        while min(size(img,1), size(img,2))*scale >= feature_params.template_size
+            img_resize = single(imresize(img, size(img)*scale));
+            disp('Current scale');
+            disp(scale);        
+            for y = 1:floor(size(img_resize,1)/feature_params.template_size)
+                for x = 1:floor(size(img_resize,2)/feature_params.template_size)
+                    crop_min_y = (y-1)*feature_params.template_size;
+                    crop_min_x = (x-1)*feature_params.template_size;
+                    img_crop = img_resize(crop_min_y+1:crop_min_y+feature_params.template_size, ...
+                                            crop_min_x+1:crop_min_x+feature_params.template_size, :);
+                    hog = vl_hog(img_crop, feature_params.hog_cell_size, 'variant', feature_params.variant);
+                    hog_compress = hog(:)';
+                    confidence = hog_compress*w + b;
+                    if confidence > feature_params.confidence_threshold
+                        cur_bboxes = [cur_bboxes; [(crop_min_x+1)/scale, (crop_min_y+1)/scale, ...
+                                                    (crop_min_x+feature_params.template_size)/scale, ...
+                                                    (crop_min_y+feature_params.template_size)/scale]];
+                        cur_confidences = [cur_confidences; confidence];
+                    end                
+                end
+            end
+            scale = scale * zoom;
+        end
     end
-    cur_image_ids(1:length(cur_bboxes),1) = {test_scenes(i).name};
-%     disp(classification_class > 0);
     
-%     num_faces = (classification_class >= 0);
-%     cur_bboxes
-%     cur_confidences
-%     classification_class
-       
+    cur_image_ids(1:length(cur_bboxes),1) = {test_scenes(i).name};    
+    
     %non_max_supr_bbox can actually get somewhat slow with thousands of
     %initial detections. You could pre-filter the detections by confidence,
     %e.g. a detection with confidence -1.1 will probably never be

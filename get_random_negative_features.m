@@ -35,7 +35,7 @@ function features_neg = get_random_negative_features(non_face_scn_path, feature_
 image_files = dir( fullfile( non_face_scn_path, '*.jpg' ));
 num_images = length(image_files);
 num_crop = floor(num_samples / num_images);
-num_samples = num_split * num_images;
+num_samples = num_crop * num_images;
 disp('[INFO] number of training negative samples');
 disp(num_samples);
 
