@@ -40,14 +40,14 @@ function [bboxes, confidences, image_ids] = ...
 % at a single scale and you can skip calling non-maximum suppression.
 
 test_scenes = dir( fullfile( test_scn_path, '*.jpg' ));
-num_test_scenes = min(30, length(test_scenes));
+num_test_scenes = min(10, length(test_scenes));
 
 %initialize these as empty and incrementally expand them.
 bboxes = zeros(0,4);
 confidences = zeros(0,1);
 image_ids = cell(0,1);
 
-method_mod = 0;
+method_mod = 1;
 
 for i = 1:num_test_scenes
       
@@ -62,21 +62,26 @@ for i = 1:num_test_scenes
     cur_confidences = zeros(0, 0);
     classification_class = [];
     
+    hog_size = feature_params.template_size;
+    hog_cell_size = feature_params.hog_cell_size;
+    variant = feature_params.variant;
+    hog_len = hog_size / hog_cell_size;
+    
     if method_mod == 0
         disp('[INFO] detect with method_mod 0');
-        scale = floor(feature_params.template_size*1.5.^(0:1:log(min(size(img,1), size(img,2))/feature_params.template_size)/log(1.5)));    
+        scale = floor(hog_size*1.5.^(0:1:log(min(size(img,1), size(img,2))/hog_size)/log(1.5)));    
         for j = 1:length(scale)
             s = scale(j);
             disp(strcat('Current scale: ', int2str(s)));
-            for y = 1:floor(size(img,1)/s)
-                for x = 1:floor(size(img,2)/s)
-                    img_crop = img((y-1)*s+1:y*s, (x-1)*s+1:x*s, :);
-                    img_resize = imresize(img_crop, [feature_params.template_size, feature_params.template_size]);   
-                    hog = vl_hog(single(img_resize), feature_params.hog_cell_size, 'variant', feature_params.variant);
+            for y = 0 : size(img,1) - hog_size
+                for x = 0 : size(img,2) - hog_size
+                    img_crop = img(y + 1 : y + hog_size, x + 1 : x + hog_size, :);
+                    img_resize = imresize(img_crop, [hog_size, hog_size]);   
+                    hog = vl_hog(single(img_resize), hog_cell_size, 'variant', variant);
                     hog_compress = hog(:)';
                     confidence = hog_compress*w + b;
                     if (sign(confidence) == 1)
-                        cur_bboxes = [cur_bboxes; [(x-1)*s+1, (y-1)*s+1, x*s, y*s]];
+                        cur_bboxes = [cur_bboxes; [x, y, x*s, y*s]];
                         cur_confidences = [cur_confidences; confidence];
                     end
                     classification_class = [classification_class, sign(confidence)];
@@ -87,23 +92,24 @@ for i = 1:num_test_scenes
         disp('[INFO] detect with method_mod 0');
         scale = 1.0;
         zoom = 0.8;
-        while min(size(img,1), size(img,2))*scale >= feature_params.template_size
-            img_resize = single(imresize(img, size(img)*scale));
-            disp('Current scale');
-            disp(scale);        
-            for y = 1:floor(size(img_resize,1)/feature_params.template_size)
-                for x = 1:floor(size(img_resize,2)/feature_params.template_size)
-                    crop_min_y = (y-1)*feature_params.template_size;
-                    crop_min_x = (x-1)*feature_params.template_size;
-                    img_crop = img_resize(crop_min_y+1:crop_min_y+feature_params.template_size, ...
-                                            crop_min_x+1:crop_min_x+feature_params.template_size, :);
-                    hog = vl_hog(img_crop, feature_params.hog_cell_size, 'variant', feature_params.variant);
-                    hog_compress = hog(:)';
-                    confidence = hog_compress*w + b;
+        while min(size(img,1), size(img,2))*scale >= hog_size
+%             disp('[INFO] scale');            
+%             disp(scale);            
+            img_resize = single(imresize(img, scale));
+            hog = vl_hog(img_resize, hog_cell_size, 'variant', variant);
+            [hog_h, hog_w, ~] = size(hog);     
+            for y = 0 : hog_h - hog_len
+                for x = 0 : hog_w - hog_len
+                    % get the hog value of each image
+                    hog_crop = hog(y + 1 : y + hog_len, x + 1 : x + hog_len, :);
+                    
+                    confidence = hog_crop(:)' * w + b;
                     if confidence > feature_params.confidence_threshold
-                        cur_bboxes = [cur_bboxes; [(crop_min_x+1)/scale, (crop_min_y+1)/scale, ...
-                                                    (crop_min_x+feature_params.template_size)/scale, ...
-                                                    (crop_min_y+feature_params.template_size)/scale]];
+                        crop_min_y = y * hog_cell_size + 1;
+                        crop_min_x = x * hog_cell_size + 1 ;                        
+                        cur_bboxes = [cur_bboxes; [crop_min_x/scale, crop_min_y/scale, ...
+                                                    (crop_min_x + hog_size)/scale, ...
+                                                    (crop_min_y + hog_size)/scale]];
                         cur_confidences = [cur_confidences; confidence];
                     end                
                 end
@@ -111,7 +117,6 @@ for i = 1:num_test_scenes
             scale = scale * zoom;
         end
     end
-    
     cur_image_ids(1:length(cur_bboxes),1) = {test_scenes(i).name};    
     
     %non_max_supr_bbox can actually get somewhat slow with thousands of

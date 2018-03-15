@@ -49,8 +49,8 @@ train_path_pos = fullfile(data_path, 'caltech_faces/Caltech_CropFaces'); %Positi
 non_face_scn_path = fullfile(data_path, 'train_non_face_scenes'); %We can mine random or hard negatives from here
 % non_face_scn_path = fullfile(data_path, 'train_non_face_scenes_split'); %We can mine random or hard negatives from here
 
-test_scn_path = fullfile(data_path,'test_scenes/test_jpg'); %CMU+MIT test scenes
-% test_scn_path = fullfile(data_path,'extra_test_scenes'); %Bonus scenes
+% test_scn_path = fullfile(data_path,'test_scenes/test_jpg'); %CMU+MIT test scenes
+test_scn_path = fullfile(data_path,'extra_test_scenes'); %Bonus scenes
 % test_scn_path = fullfile(data_path,'simple_test/test_jpg'); %Debug test scenes
 
 label_path = fullfile(data_path,'test_scenes/ground_truth_bboxes.txt'); %the ground truth face locations in the test set
@@ -63,8 +63,8 @@ feature_params = struct('template_size', 36, 'hog_cell_size', 6, 'variant', 'UoC
                         'confidence_threshold', 1.1);
 
 % if you already have trained parameters
-features_exist = 0;
-coef_exist = 0;
+features_exist = 1;
+coef_exist = 1;
 
 %% Step 1. Load positive training crops and random negative examples
 num_negative_examples = 10000; %Higher will work strictly better, but you should start with 10000 for debugging
@@ -102,17 +102,17 @@ if coef_exist == 0
     disp(INFO)    
 else
     disp('[INFO] load svm_w_b from mat');
-%     load('param/svm_w.mat');
-%     load('param/svm_b.mat');
-    load('param/b_ap0.927_cell3_zoom0.9_scale1_conf_n1.1.mat');
-    load('param/w_ap0.927_cell3_zoom0.9_scale1_conf_n1.1.mat');    
+    load('param/svm_w.mat');
+    load('param/svm_b.mat');
+%     load('param/b_ap0.927_cell3_zoom0.9_scale1_conf_n1.1.mat');
+%     load('param/w_ap0.927_cell3_zoom0.9_scale1_conf_n1.1.mat');    
 end
 
-% %% step 3. Examine learned classifier
-% % You don't need to modify anything in this section. The section first
-% % evaluates _training_ error, which isn't ultimately what we care about,
-% % but it is a good sanity check. Your training error should be very low.
-% 
+%% step 3. Examine learned classifier
+% You don't need to modify anything in this section. The section first
+% evaluates _training_ error, which isn't ultimately what we care about,
+% but it is a good sanity check. Your training error should be very low.
+
 % fprintf('Initial classifier performance on train data:\n')
 % confidences = [features_pos; features_neg]*w + b;
 % label_vector = [ones(size(features_pos,1),1); -1*ones(size(features_neg,1),1)];
@@ -191,3 +191,7 @@ visualize_detections_by_image(bboxes, confidences, image_ids, tp, fp, test_scn_p
 % multiscale, 6 pixel step ~ 0.83 AP
 % multiscale, 4 pixel step ~ 0.89 AP
 % multiscale, 3 pixel step ~ 0.92 AP
+
+
+
+
