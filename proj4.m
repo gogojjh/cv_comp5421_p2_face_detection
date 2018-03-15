@@ -59,8 +59,8 @@ label_path = fullfile(data_path,'test_scenes/ground_truth_bboxes.txt'); %the gro
 %add other fields to this struct if you want to modify HoG default
 %parameters such as the number of orientations, but that does not help
 %performance in our limited test.
-feature_params = struct('template_size', 36, 'hog_cell_size', 6, 'variant', 'UoCTTI', ...
-                        'confidence_threshold', 0.67);
+feature_params = struct('template_size', 36, 'hog_cell_size', 3, 'variant', 'UoCTTI', ...
+                        'confidence_threshold', 0.4);
 
 % if you already have trained parameters
 features_exist = 1;

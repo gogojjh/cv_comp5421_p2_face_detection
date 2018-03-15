@@ -91,15 +91,16 @@ for i = 1:num_test_scenes
     elseif method_mod == 1
         disp('[INFO] detect with method_mod 0');
         scale = 1.0;
-        zoom = 0.8;
+        zoom = 0.9; % 0.7
+        hog_step = 1;
         while min(size(img,1), size(img,2))*scale >= hog_size
 %             disp('[INFO] scale');            
 %             disp(scale);            
             img_resize = single(imresize(img, scale));
             hog = vl_hog(img_resize, hog_cell_size, 'variant', variant);
             [hog_h, hog_w, ~] = size(hog);     
-            for y = 0 : hog_h - hog_len
-                for x = 0 : hog_w - hog_len
+            for y = 0 : hog_step : hog_h - hog_len
+                for x = 0 : hog_step : hog_w - hog_len
                     % get the hog value of each image
                     hog_crop = hog(y + 1 : y + hog_len, x + 1 : x + hog_len, :);
                     
