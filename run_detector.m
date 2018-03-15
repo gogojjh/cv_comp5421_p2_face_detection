@@ -40,7 +40,7 @@ function [bboxes, confidences, image_ids] = ...
 % at a single scale and you can skip calling non-maximum suppression.
 
 test_scenes = dir( fullfile( test_scn_path, '*.jpg' ));
-num_test_scenes = min(10, length(test_scenes));
+num_test_scenes = min(300, length(test_scenes));
 
 %initialize these as empty and incrementally expand them.
 bboxes = zeros(0,4);

@@ -49,8 +49,8 @@ train_path_pos = fullfile(data_path, 'caltech_faces/Caltech_CropFaces'); %Positi
 non_face_scn_path = fullfile(data_path, 'train_non_face_scenes'); %We can mine random or hard negatives from here
 % non_face_scn_path = fullfile(data_path, 'train_non_face_scenes_split'); %We can mine random or hard negatives from here
 
-% test_scn_path = fullfile(data_path,'test_scenes/test_jpg'); %CMU+MIT test scenes
-test_scn_path = fullfile(data_path,'extra_test_scenes'); %Bonus scenes
+test_scn_path = fullfile(data_path,'test_scenes/test_jpg'); %CMU+MIT test scenes
+% test_scn_path = fullfile(data_path,'extra_test_scenes'); %Bonus scenes
 % test_scn_path = fullfile(data_path,'simple_test/test_jpg'); %Debug test scenes
 
 label_path = fullfile(data_path,'test_scenes/ground_truth_bboxes.txt'); %the ground truth face locations in the test set
@@ -60,7 +60,7 @@ label_path = fullfile(data_path,'test_scenes/ground_truth_bboxes.txt'); %the gro
 %parameters such as the number of orientations, but that does not help
 %performance in our limited test.
 feature_params = struct('template_size', 36, 'hog_cell_size', 6, 'variant', 'UoCTTI', ...
-                        'confidence_threshold', 1.1);
+                        'confidence_threshold', 0.67);
 
 % if you already have trained parameters
 features_exist = 1;
