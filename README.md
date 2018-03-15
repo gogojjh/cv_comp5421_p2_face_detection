@@ -22,10 +22,10 @@
 ### Test
 1. On simple test datasets(CMU+MIT test set): **Yellow** bounding boxes are groundtruth, **green** bounding boxes are detecting results(true positive), while **red** bounding boxes are also detecting results(false positive).
 > <img src="result/argentina.jpg" width=300>
-> <ima src="result/average_precision.png" width=300>
+> <img src="result/average_precision.png" width=300>
 2. On challengous test datasets: no ground truth; more errors
-> <img src="result/cs143_2011_class_easy.jpg" width=400>
-> <img src="result/cs143_2013_class_hard.jpg" width=400>
+> <img src="result/cs143_2011_class_easy.jpg" width=500>
+> <img src="result/cs143_2013_class_hard.jpg" width=500>
 
 ### Demo Video
 [![Watch the video](https://raw.github.com/GabLeRoux/WebMole/master/ressources/WebMole_Youtube_Video.png)](https://youtu.be/ikqO0clNH1s)
